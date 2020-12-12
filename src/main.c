@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
-#include "./consts.h"
+#include "consts.h"
 
-int init_SDL(SDL_Window *window, SDL_Surface *surface) {
+int init_SDL(SDL_Window *window, SDL_Surface *surface, SDL_Renderer *renderer) {
   //Initialize SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     printf("Failed to init video.\n");
@@ -20,21 +20,46 @@ int init_SDL(SDL_Window *window, SDL_Surface *surface) {
   }
 
   surface = SDL_GetWindowSurface(window);
+  renderer = SDL_CreateRenderer(window, -1,
+                                SDL_RENDERER_ACCELERATED
+                                | SDL_RENDERER_PRESENTVSYNC);
   
+
   return 0;
 }
 
 int main(void) {
-  //The window we'll be rendering to
-  SDL_Window* window = NULL;
-  
-  //The surface contained by the window
-  SDL_Surface* screenSurface = NULL;
+  SDL_Window *window = NULL;
+  SDL_Surface *screenSurface = NULL;
+  SDL_Renderer *renderer = NULL;
 
-  if (init_SDL(window, screenSurface) < 0) return -1;
+  if (init_SDL(window, screenSurface, renderer) < 0) return -1;
   
   printf("Hello world!\n");
 
+
+  int running = 1;
+  const int render_timer = roundf(1000.0f / (float) FPS);
+
+  while (running) {
+    SDL_Event event;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    const int start_frame_time = SDL_GetTicks();
+
+    if (SDL_PollEvent(&event))
+    {
+      if (event.type == SDL_QUIT)
+      {
+        running = 0;
+      }
+    }
+  }
+  
+
+
+  
   SDL_DestroyWindow(window);
 
   SDL_Quit();
