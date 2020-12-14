@@ -71,6 +71,29 @@ void generate_coordinates(Coordinate coords[]) {
   }
 }
 
+void handle_inputs(int *running, SDL_Renderer *renderer, Coordinate coordinates[]) {
+  if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
+    printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
+  }
+  
+  if (SDL_RenderClear(renderer) < 0) {
+    printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
+  }
+
+  SDL_Event event;
+
+  draw_board(renderer, coordinates);
+
+  if (SDL_PollEvent(&event)) {
+    if (event.type == SDL_MOUSEBUTTONUP) {
+      printf("X: %d, Y: %d\n", event.button.x, event.button.y);
+    }
+    if (event.type == SDL_QUIT) {
+      *running = 0;
+    }
+  }  
+}
+
 int main(void) {
   SDL_Window *window     = NULL;
   SDL_Renderer *renderer = NULL;
@@ -87,28 +110,8 @@ int main(void) {
   printf("Generated coordinates.\n");
 
   while (running) {
-    if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
-      printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
-    }
-    
-    if (SDL_RenderClear(renderer) < 0) {
-      printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
-    }
-
-    SDL_Event event;
-
     const int start_frame_time = SDL_GetTicks();
-
-    draw_board(renderer, coordinates);
-
-    if (SDL_PollEvent(&event)) {
-      if (event.type == SDL_MOUSEBUTTONUP) {
-        printf("X: %d, Y: %d\n", event.button.x, event.button.y);
-      }
-      if (event.type == SDL_QUIT) {
-        running = 0;
-      }
-    }
+    handle_inputs(&running, renderer, coordinates);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;
