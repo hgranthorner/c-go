@@ -2,15 +2,19 @@
 #include <SDL2/SDL.h>
 #include "consts.h"
 
+typedef struct Coordinate {
+  int x;
+  int y;
+} Coordinate;
+
 int init_SDL(SDL_Window **window,
              SDL_Renderer **renderer) {
-  //Initialize SDL
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     printf("Failed to init video.\n");
     return -1;
   }
 
-  *window = SDL_CreateWindow( "SDL Tutorial",
+  *window = SDL_CreateWindow("SDL Tutorial",
                              SDL_WINDOWPOS_CENTERED,
                              SDL_WINDOWPOS_CENTERED,
                              SCREEN_WIDTH,
@@ -36,29 +40,33 @@ int init_SDL(SDL_Window **window,
 
 void draw_square(SDL_Renderer *renderer,
                  const int x,
-                 const int y,
-                 const int square_length) {
-  SDL_Rect rect = { x, y, .w = square_length, .h = square_length };
+                 const int y) {
+  SDL_Rect rect = { x, y, .w = SQUARE_LENGTH, .h = SQUARE_LENGTH };
   if (SDL_RenderDrawRect(renderer, &rect) < 0) {
     const char *error = SDL_GetError();
     printf("Failed to draw rect! %s\n", error);
-  };
+  }
 }
 
-void draw_board(SDL_Renderer *renderer) {
+void draw_board(SDL_Renderer *renderer, Coordinate coordinates[]) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
   SDL_RenderClear(renderer);
 
-  // 19 x 19 board with 15 pixels of padding on both sides
-  int board_length = SCREEN_WIDTH - 30;
-  int square_width = board_length / 19;
-  
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  for (int i = 0; i < 19; i++) {
-    const int x = square_width * i + PADDING;
-    for (int j = 0; j < 19; j++) {
-      const int y = square_width * j + PADDING;
-      draw_square(renderer, x, y, square_width);
+
+  for (int i = 0; i < NUM_SQUARES; i++) {
+    Coordinate coord = coordinates[i];
+    draw_square(renderer, coord.x, coord.y);
+  }
+}
+
+void generate_coordinates(Coordinate coords[]) {
+  for (int i = 0; i < BOARD_DIMENSIONS; i++) {
+    const int x = SQUARE_LENGTH * i + PADDING;
+    for (int j = 0; j < BOARD_DIMENSIONS; j++) {
+      const int y = SQUARE_LENGTH * j + PADDING;
+      Coordinate c = { x, y };
+      coords[(i * BOARD_DIMENSIONS) + j] = c;
     }
   }
 }
@@ -73,10 +81,16 @@ int main(void) {
 
   const int render_timer = roundf(1000.0f / (float) FPS);
 
-  while (running == 1) {
+  Coordinate coordinates[NUM_SQUARES];
+
+  generate_coordinates(coordinates);
+  printf("Generated coordinates.\n");
+
+  while (running) {
     if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
       printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
     }
+    
     if (SDL_RenderClear(renderer) < 0) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
@@ -85,7 +99,7 @@ int main(void) {
 
     const int start_frame_time = SDL_GetTicks();
 
-    draw_board(renderer);
+    draw_board(renderer, coordinates);
 
     if (SDL_PollEvent(&event)) {
       if (event.type == SDL_QUIT) {
@@ -94,7 +108,8 @@ int main(void) {
     }
 
     const int end_frame_time = SDL_GetTicks();
-    const int time_to_wait = max(10, render_timer - (end_frame_time - start_frame_time));
+    const int delta_time = end_frame_time - start_frame_time;
+    const int time_to_wait = max(10, render_timer - delta_time);
 
     SDL_Delay(time_to_wait);
     SDL_RenderPresent(renderer);
