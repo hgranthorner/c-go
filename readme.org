@@ -2,7 +2,7 @@
 
 In order to run the make file, you'll need the SDL2 lib in the "lib" folder and the SDL2 header in the "include" folder.
 
-cd /Users/grant/Dev/c-go/ && make && ./c-go
+cd ~/Dev/c-go && make
 
 * To Dos
 
