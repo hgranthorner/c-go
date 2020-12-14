@@ -1,0 +1,16 @@
+* Go, implemented in c.
+
+In order to run the make file, you'll need the SDL2 lib in the "lib" folder and the SDL2 header in the "include" folder.
+
+cd /Users/grant/Dev/c-go/ && make && ./c-go
+
+* To Dos
+
+** DONE Set Up SDL
+** TODO Draw board
+** TODO Place Stones
+** TODO Add rules
+   - Liberties
+   - Groups
+   - ko
+   - Self Atari + eyes
