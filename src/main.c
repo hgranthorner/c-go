@@ -102,6 +102,9 @@ int main(void) {
     draw_board(renderer, coordinates);
 
     if (SDL_PollEvent(&event)) {
+      if (event.type == SDL_MOUSEBUTTONUP) {
+        printf("X: %d, Y: %d\n", event.button.x, event.button.y);
+      }
       if (event.type == SDL_QUIT) {
         running = 0;
       }
