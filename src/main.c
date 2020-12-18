@@ -54,10 +54,29 @@ void draw_board(SDL_Renderer *renderer, Coordinate coordinates[]) {
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-  for (int i = 0; i < NUM_SQUARES; i++) {
-    Coordinate coord = coordinates[i];
-    draw_square(renderer, coord.x, coord.y);
+  // Draw all horizontal lines - same x axis
+  for (int i = 0; i <= 19; i++) {
+    SDL_RenderDrawLine(renderer,
+                       PADDING,
+                       i * SQUARE_LENGTH + PADDING,
+                       SCREEN_WIDTH - PADDING,
+                       i * SQUARE_LENGTH + PADDING);
   }
+
+  // Draw all vertical lines - same y axis
+  for (int i = 0; i <= 19; i++) {
+    SDL_RenderDrawLine(renderer,
+                       i * SQUARE_LENGTH + PADDING,
+                       PADDING,
+                       i * SQUARE_LENGTH + PADDING,
+                       SCREEN_WIDTH - PADDING);
+  }
+
+  
+  /* for (int i = 0; i < NUM_SQUARES; i++) { */
+  /*   Coordinate coord = coordinates[i]; */
+  /*   draw_square(renderer, coord.x, coord.y); */
+  /* } */
 }
 
 void generate_coordinates(Coordinate coords[]) {
