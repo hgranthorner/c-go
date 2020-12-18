@@ -7,7 +7,8 @@ cd ~/Dev/c-go && make
 * To Dos
 
 ** DONE Set Up SDL
-** TODO Draw board
+** IN PROGRESS Draw board
+   - Currently made with rects, need to make it into lines
 ** TODO Place Stones
 ** TODO Add rules
    - Liberties

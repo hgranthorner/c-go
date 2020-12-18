@@ -111,6 +111,7 @@ int main(void) {
 
   while (running) {
     const int start_frame_time = SDL_GetTicks();
+    
     handle_inputs(&running, renderer, coordinates);
 
     const int end_frame_time = SDL_GetTicks();
