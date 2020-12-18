@@ -26,8 +26,8 @@ int init_SDL(SDL_Window **window,
   }
 
   *renderer = SDL_CreateRenderer(*window, -1,
-                                SDL_RENDERER_ACCELERATED
-                                | SDL_RENDERER_PRESENTVSYNC);
+                                 SDL_RENDERER_ACCELERATED
+                                 | SDL_RENDERER_PRESENTVSYNC);
 
   if (*renderer == NULL) {
     printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -55,28 +55,19 @@ void draw_board(SDL_Renderer *renderer, Coordinate coordinates[]) {
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
   // Draw all horizontal lines - same x axis
-  for (int i = 0; i <= 19; i++) {
+  for (int i = 0; i < 19; i++) {
     SDL_RenderDrawLine(renderer,
                        PADDING,
-                       i * SQUARE_LENGTH + PADDING,
-                       SCREEN_WIDTH - PADDING,
-                       i * SQUARE_LENGTH + PADDING);
-  }
-
-  // Draw all vertical lines - same y axis
-  for (int i = 0; i <= 19; i++) {
+                       (i * SQUARE_LENGTH) + PADDING,
+                       SCREEN_WIDTH - PADDING + 1,
+                       (i * SQUARE_LENGTH) + PADDING);
+    
     SDL_RenderDrawLine(renderer,
-                       i * SQUARE_LENGTH + PADDING,
+                       (i * SQUARE_LENGTH) + PADDING,
                        PADDING,
-                       i * SQUARE_LENGTH + PADDING,
-                       SCREEN_WIDTH - PADDING);
+                       (i * SQUARE_LENGTH) + PADDING,
+                       SCREEN_WIDTH - PADDING + 1);    
   }
-
-  
-  /* for (int i = 0; i < NUM_SQUARES; i++) { */
-  /*   Coordinate coord = coordinates[i]; */
-  /*   draw_square(renderer, coord.x, coord.y); */
-  /* } */
 }
 
 void generate_coordinates(Coordinate coords[]) {
@@ -90,19 +81,12 @@ void generate_coordinates(Coordinate coords[]) {
   }
 }
 
+/* void draw_intersections(SDL_Renderer *renderer, Coordinate coords[]) { */
+/*   for (int i = 0; i < ) */
+/* } */
+
 void handle_inputs(int *running, SDL_Renderer *renderer, Coordinate coordinates[]) {
-  if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
-    printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
-  }
-  
-  if (SDL_RenderClear(renderer) < 0) {
-    printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
-  }
-
   SDL_Event event;
-
-  draw_board(renderer, coordinates);
-
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
       printf("X: %d, Y: %d\n", event.button.x, event.button.y);
@@ -126,11 +110,20 @@ int main(void) {
   Coordinate coordinates[NUM_SQUARES];
 
   generate_coordinates(coordinates);
-  printf("Generated coordinates.\n");
 
   while (running) {
     const int start_frame_time = SDL_GetTicks();
     
+    if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
+      printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
+    }
+  
+    if (SDL_RenderClear(renderer) < 0) {
+      printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
+    }
+
+    draw_board(renderer, coordinates);
+
     handle_inputs(&running, renderer, coordinates);
 
     const int end_frame_time = SDL_GetTicks();
