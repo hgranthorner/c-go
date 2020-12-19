@@ -89,6 +89,7 @@ void draw_board(SDL_Renderer *renderer, const Stones *stones) {
   if (stones != NULL) {
     for (int i = 0; i < stones->next_index; i++) {
       const Stone stone = stones->stones[i];
+      if (stone.destroyed) continue;
       if (stone.color == Black) SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
       if (stone.color == White) SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
