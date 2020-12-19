@@ -55,16 +55,6 @@ int init_SDL(SDL_Window **window,
   return 0;
 }
 
-void draw_square(SDL_Renderer *renderer,
-                 const int x,
-                 const int y) {
-  SDL_Rect rect = { x, y, .w = SQUARE_LENGTH, .h = SQUARE_LENGTH };
-  if (SDL_RenderDrawRect(renderer, &rect) < 0) {
-    const char *error = SDL_GetError();
-    printf("Failed to draw rect! %s\n", error);
-  }
-}
-
 void draw_board(SDL_Renderer *renderer, const Stones *stones) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
   SDL_RenderClear(renderer);
