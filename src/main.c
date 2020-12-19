@@ -109,16 +109,6 @@ void generate_coordinates(Coordinate coords[]) {
   }
 }
 
-// Just to confirm that the intersections are right
-void draw_intersections(SDL_Renderer *renderer, const Coordinate coords[]) {
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 1);  
-  for (int i = 0; i < NUM_INTERSECTIONS; i++) {
-    const Coordinate c = coords[i];
-    const SDL_Rect rect = { .x = c.x - 5, .y = c.y - 5, .w = 10, .h = 10};
-    SDL_RenderFillRect(renderer, &rect);
-  }
-}
-
 // index of array = i * 19 + j
 // x = square_len * i + padding -> x = 24 * i + 30
 // y = square_len * j + padding -> y = 24 * j + 30
@@ -129,11 +119,19 @@ void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
   const int index = i * 19 + j;
   Coordinate clicked = coords[index];
 
-  const Stone stone = { clicked, stones->turn, index, false };
-  stones->stones[stones->next_index] = stone;
-  if (stones->turn == Black) stones->turn = White;
-  else if (stones->turn == White) stones->turn = Black;
-  stones->next_index++;  
+  // TODO: Create or add a "contains" function
+  bool found = false;
+
+  for (int i = 0; i < stones->next_index; i++) {
+    found = stones->stones[i].intersection_index == index && !stones->stones[i].destroyed;
+  }
+  if (!found) {
+    const Stone stone = { clicked, stones->turn, index, false };
+    stones->stones[stones->next_index] = stone;
+    if (stones->turn == Black) stones->turn = White;
+    else if (stones->turn == White) stones->turn = Black;
+    stones->next_index++;  
+  }
 }
 
 void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coordinates[], Stones *stones) {
@@ -175,10 +173,9 @@ int main(void) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
 
-    draw_board(renderer, &stones);
-    //draw_intersections(renderer, coordinates);
-
     handle_inputs(&running, renderer, coordinates, &stones);
+
+    draw_board(renderer, &stones);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;
