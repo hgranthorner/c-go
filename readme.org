@@ -7,8 +7,11 @@ cd ~/Dev/c-go && make
 * To Dos
 
 ** DONE Set Up SDL
-** IN PROGRESS Draw board
+** DONE Draw board
    - Currently made with rects, need to make it into lines
+** TODO Calculate intersection collision
+   - Draw box around every intersection
+   - Have mouse over show box to indicate which intersection the stone will be placed on
 ** TODO Place Stones
 ** TODO Add rules
    - Liberties
