@@ -3,26 +3,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include "consts.h"
-
-typedef struct {
-  int x;
-  int y;
-} Coordinate;
-
-typedef enum {Black, White} Color;
-
-typedef struct {
-  Coordinate coord;
-  Color color;
-  int intersection_index;
-  bool destroyed;
-} Stone;
-
-typedef struct {
-  Stone stones[1000];
-  int next_index;
-  Color turn;
-} Stones;
+#include "structs.h"
 
 int init_SDL(SDL_Window **window,
              SDL_Renderer **renderer) {
@@ -48,14 +29,14 @@ int init_SDL(SDL_Window **window,
 
   if (*renderer == NULL) {
     printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-    return -1;    
+    return -1;
   }
-  
+
 
   return 0;
 }
 
-void draw_board(SDL_Renderer *renderer, const Stones *stones) {
+void draw_board(SDL_Renderer *renderer, const Stones *stones, const Coordinate *hover) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
   SDL_RenderClear(renderer);
 
@@ -68,12 +49,18 @@ void draw_board(SDL_Renderer *renderer, const Stones *stones) {
                        (i * SQUARE_LENGTH) + PADDING,
                        SCREEN_WIDTH - PADDING + 1,
                        (i * SQUARE_LENGTH) + PADDING);
-    
+
     SDL_RenderDrawLine(renderer,
                        (i * SQUARE_LENGTH) + PADDING,
                        PADDING,
                        (i * SQUARE_LENGTH) + PADDING,
-                       SCREEN_WIDTH - PADDING + 1);    
+                       SCREEN_WIDTH - PADDING + 1);
+  }
+
+  if (hover != NULL) {
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    const SDL_Rect rect = { hover->x - 3, hover->y - 3, 6, 6 };
+    SDL_RenderFillRect(renderer, &rect);
   }
 
   if (stones != NULL) {
@@ -104,10 +91,33 @@ void generate_coordinates(Coordinate coords[]) {
 // x = square_len * i + padding -> x = 24 * i + 30
 // y = square_len * j + padding -> y = 24 * j + 30
 // index of array = ((x - 30) / 24) * 19 + (y - 30) / 24
-void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
-  const int i = round((click.x - PADDING) / (float) SQUARE_LENGTH);
-  const int j = round((click.y - PADDING) / (float) SQUARE_LENGTH);
+
+int find_index(const Coordinate *click) {
+  // check to make sure click is inside board
+  bool x_outside = click->x < PADDING || click->x > SCREEN_WIDTH  - PADDING;
+  bool y_outside = click->y < PADDING || click->y > SCREEN_HEIGHT - PADDING;
+
+  if (x_outside || y_outside) return -1;
+
+  const int i = round((click->x - PADDING) / (float) SQUARE_LENGTH);
+  const int j = round((click->y - PADDING) / (float) SQUARE_LENGTH);
   const int index = i * 19 + j;
+  return index;
+}
+
+Coordinate *update_highlighted_intersection(Coordinate coords[], const Coordinate *event) {
+  const int index = find_index(event);
+  if (index == -1) return NULL;
+  return &coords[index];
+}
+
+void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
+  const int index = find_index(&click);
+
+  if (index == -1) {
+    return;
+  }
+
   Coordinate clicked = coords[index];
 
   // TODO: Create or add a "contains" function
@@ -121,21 +131,25 @@ void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
     stones->stones[stones->next_index] = stone;
     if (stones->turn == Black) stones->turn = White;
     else if (stones->turn == White) stones->turn = Black;
-    stones->next_index++;  
+    stones->next_index++;
   }
 }
 
-void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coordinates[], Stones *stones) {
+void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coords[], Stones *stones, Coordinate **hover) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
-       const Coordinate click = { event.button.x, event.button.y};
-       place_stone(coordinates, click, stones);
+      const Coordinate click = { event.button.x, event.button.y};
+      place_stone(coords, click, stones);
+    }
+    if (event.type == SDL_MOUSEMOTION) {
+      const Coordinate hover_event = { event.motion.x, event.motion.y };
+      *hover = update_highlighted_intersection(coords, &hover_event);
     }
     if (event.type == SDL_QUIT) {
       *running = false;
     }
-  }  
+  }
 }
 
 int main(void) {
@@ -143,30 +157,31 @@ int main(void) {
   SDL_Renderer *renderer = NULL;
 
   if (init_SDL(&window, &renderer) < 0) return -1;
-  
+
   bool running = true;
 
   const int render_timer = roundf(1000.0f / (float) FPS);
 
   Coordinate coordinates[NUM_INTERSECTIONS];
   generate_coordinates(coordinates);
-  
+
   Stones stones = { {}, 0, Black };
-  
+  Coordinate *hovered_coordinate = NULL;
+
   while (running) {
     const int start_frame_time = SDL_GetTicks();
-    
+
     if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
       printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
     }
-  
+
     if (SDL_RenderClear(renderer) < 0) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
 
-    handle_inputs(&running, renderer, coordinates, &stones);
+    handle_inputs(&running, renderer, coordinates, &stones, &hovered_coordinate);
 
-    draw_board(renderer, &stones);
+    draw_board(renderer, &stones, hovered_coordinate);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;
@@ -175,7 +190,7 @@ int main(void) {
     SDL_Delay(time_to_wait);
     SDL_RenderPresent(renderer);
   }
-  
+
   SDL_DestroyWindow(window);
 
   SDL_Quit();
