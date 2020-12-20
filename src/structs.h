@@ -23,5 +23,11 @@ typedef struct {
   Color turn;
 } Stones;
 
+typedef struct {
+  int black_territory;
+  int black_takes;
+  int white_territory;
+  int white_takes;
+} Score;
 
 #endif

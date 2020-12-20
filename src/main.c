@@ -1,14 +1,22 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 #include <math.h>
 #include <stdbool.h>
 #include "consts.h"
 #include "structs.h"
 
 int init_SDL(SDL_Window **window,
-             SDL_Renderer **renderer) {
+             SDL_Renderer **renderer,
+             TTF_Font **font) {
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     printf("Failed to init video.\n");
+    return -1;
+  }
+
+  if (TTF_Init() == -1) {
+    printf("Failed to init ttf.\n");
     return -1;
   }
 
@@ -32,13 +40,39 @@ int init_SDL(SDL_Window **window,
     return -1;
   }
 
+  *font = TTF_OpenFont("assets/arial.ttf", FONT_SIZE);
+  if (*font == NULL) {
+    printf( "Font could not be loaded! SDL_Error: %s\n", SDL_GetError());
+    return -1;
+  }
+
 
   return 0;
 }
 
-void draw_board(SDL_Renderer *renderer, const Stones *stones, const Coordinate *hover) {
+void draw_black_stone(SDL_Renderer *renderer, int x, int y) {
+  filledCircleRGBA(renderer, x, y, STONE_RADIUS, 0, 0, 0, 255);
+}
+
+void draw_white_stone(SDL_Renderer *renderer, int x, int y) {
+  filledCircleRGBA(renderer, x, y, STONE_RADIUS, 255, 255, 255, 255);
+}
+
+void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, const Coordinate *hover) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
+  const SDL_Color color = {0, 0, 0};
+  SDL_Surface *surface = TTF_RenderText_Blended(font, "Test text", color);
+  SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+  int text_w = 0;
+  int text_h = 0;
+  SDL_QueryTexture(texture, NULL, NULL, &text_w, &text_h);
+  const SDL_Rect rect = { PADDING, SCREEN_HEIGHT - PADDING, text_w, text_h };
   SDL_RenderClear(renderer);
+  SDL_RenderCopy(renderer, texture, NULL, &rect);
+  SDL_DestroyTexture(texture);
+  SDL_FreeSurface(surface);
+
+
 
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
@@ -67,11 +101,8 @@ void draw_board(SDL_Renderer *renderer, const Stones *stones, const Coordinate *
     for (int i = 0; i < stones->next_index; i++) {
       const Stone stone = stones->stones[i];
       if (stone.destroyed) continue;
-      if (stone.color == Black) SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-      if (stone.color == White) SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-
-      const SDL_Rect rect = { stone.coord.x - 3, stone.coord.y - 3, 6, 6 };
-      SDL_RenderFillRect(renderer, &rect);
+      if (stone.color == Black) draw_black_stone(renderer, stone.coord.x, stone.coord.y);
+      if (stone.color == White) draw_white_stone(renderer, stone.coord.x, stone.coord.y);
     }
   }
 }
@@ -155,8 +186,9 @@ void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coords[], S
 int main(void) {
   SDL_Window *window     = NULL;
   SDL_Renderer *renderer = NULL;
+  TTF_Font *font         = NULL;
 
-  if (init_SDL(&window, &renderer) < 0) return -1;
+  if (init_SDL(&window, &renderer, &font) < 0) return -1;
 
   bool running = true;
 
@@ -167,6 +199,7 @@ int main(void) {
 
   Stones stones = { {}, 0, Black };
   Coordinate *hovered_coordinate = NULL;
+  Score score = {0, 0, 0, 0};
 
   while (running) {
     const int start_frame_time = SDL_GetTicks();
@@ -181,7 +214,7 @@ int main(void) {
 
     handle_inputs(&running, renderer, coordinates, &stones, &hovered_coordinate);
 
-    draw_board(renderer, &stones, hovered_coordinate);
+    draw_board(renderer, font, &stones, hovered_coordinate);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;

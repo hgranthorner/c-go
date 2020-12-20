@@ -15,5 +15,7 @@ const int BOARD_LENGTH = SCREEN_WIDTH - (PADDING * 2);
 const int SQUARE_LENGTH = BOARD_LENGTH / (19 - 1);
 const int FPS = 60;
 const int NUM_INTERSECTIONS = 361;
+const int FONT_SIZE = 16;
+const int STONE_RADIUS = 10;
 
 #endif

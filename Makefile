@@ -1,7 +1,7 @@
-LIB=-I include -L lib -l SDL2-2.0.0
+LINKER_FLAGS = -lSDL2 -lSDL2_ttf -lSDL2_gfx
 
 main: main.o
-	gcc build/main.o -o c-go $(LIB)
+	gcc build/main.o -o c-go $(LINKER_FLAGS)
 
 main.o: src/structs.h
 	gcc -c src/main.c -o build/main.o
