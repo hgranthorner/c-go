@@ -58,17 +58,27 @@ void draw_white_stone(SDL_Renderer *renderer, int x, int y) {
   filledCircleRGBA(renderer, x, y, STONE_RADIUS, 255, 255, 255, 255);
 }
 
-void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, const Coordinate *hover) {
+void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, const Coordinate *hover, const Score *score) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
-  const SDL_Color color = {0, 0, 0};
-  SDL_Surface *surface = TTF_RenderText_Blended(font, "Test text", color);
+  char black_takes[12];
+  char white_takes[12];
+  sprintf(black_takes, "%d", score->black_takes);
+  sprintf(white_takes, "%d", score->white_takes);
+  const SDL_Color black_color = {0, 0, 0};
+  const SDL_Color white_color = {255, 255, 255};
+  SDL_Surface *surface = TTF_RenderText_Blended(font, black_takes, black_color);
   SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
   int text_w = 0;
   int text_h = 0;
   SDL_QueryTexture(texture, NULL, NULL, &text_w, &text_h);
-  const SDL_Rect rect = { PADDING, SCREEN_HEIGHT - PADDING, text_w, text_h };
+  const SDL_Rect black_rect = { PADDING, SCREEN_HEIGHT - PADDING, text_w, text_h };
   SDL_RenderClear(renderer);
-  SDL_RenderCopy(renderer, texture, NULL, &rect);
+  SDL_RenderCopy(renderer, texture, NULL, &black_rect);
+  surface = TTF_RenderText_Blended(font, white_takes, white_color);
+  texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_QueryTexture(texture, NULL, NULL, &text_w, &text_h);
+  const SDL_Rect white_rect = { SCREEN_WIDTH - PADDING - text_w, PADDING - text_h, text_w, text_h };
+  SDL_RenderCopy(renderer, texture, NULL, &white_rect);
   SDL_DestroyTexture(texture);
   SDL_FreeSurface(surface);
 
@@ -157,6 +167,7 @@ void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
   for (int i = 0; i < stones->next_index; i++) {
     found = stones->stones[i].intersection_index == index && !stones->stones[i].destroyed;
   }
+
   if (!found) {
     const Stone stone = { clicked, stones->turn, index, false };
     stones->stones[stones->next_index] = stone;
@@ -214,7 +225,7 @@ int main(void) {
 
     handle_inputs(&running, renderer, coordinates, &stones, &hovered_coordinate);
 
-    draw_board(renderer, font, &stones, hovered_coordinate);
+    draw_board(renderer, font, &stones, hovered_coordinate, &score);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;
