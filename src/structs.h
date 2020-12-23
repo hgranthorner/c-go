@@ -11,11 +11,15 @@ typedef struct {
 typedef enum {Black, White} Color;
 
 typedef struct {
+  int id;
   Coordinate coord;
   Color color;
   int intersection_index;
   bool destroyed;
+  int liberties;
 } Stone;
+
+Stone create_stone(Coordinate coord, Color color, int intersection_index);
 
 typedef struct {
   Stone stones[1000];
