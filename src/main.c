@@ -150,11 +150,11 @@ Coordinate *find_intersection(Coordinate coords[], const Coordinate *event) {
   return &coords[index];
 }
 
-void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
+const Stone *place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
   const int index = find_index(&click);
 
   if (index == -1) {
-    return;
+    return NULL;
   }
 
   Coordinate clicked = coords[index];
@@ -166,21 +166,67 @@ void place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
     found = stones->stones[i].intersection_index == index && !stones->stones[i].destroyed;
   }
 
+  const Stone *stone = NULL;
+
   if (!found) {
-    const Stone stone = create_stone(clicked, stones->turn, index);
-    stones->stones[stones->next_index] = stone;
+    stone = create_stone(clicked, stones->turn, index);
+    stones->stones[stones->next_index] = *stone;
     if (stones->turn == Black) stones->turn = White;
     else if (stones->turn == White) stones->turn = Black;
     stones->next_index++;
   }
+
+  return stone;
 }
+
+void get_neighboring_indices(const int index, int *arr) {
+  arr[0] = index % BOARD_DIMENSIONS == 0                 ? -1 : index - 1;
+  arr[1] = index + BOARD_DIMENSIONS >= NUM_INTERSECTIONS ? -1 : index + BOARD_DIMENSIONS;
+  arr[2] = index % BOARD_DIMENSIONS == 18                ? -1 : index + 1;
+  arr[3] = index - BOARD_DIMENSIONS < 0                  ? -1 : index - BOARD_DIMENSIONS;
+}
+
+
+// Idea: get the neighboring indices of our stone.
+void try_kill_stone(const Stone *stone, const Stones *stones) {
+
+}
+
+void kill_stones(const Stone *stone, Stones *stones) {
+  int neighbors[4];
+  get_neighboring_indices(stone->intersection_index, neighbors);
+  Stone *found_stone = NULL;
+
+  // n is a 4 element array
+  for (int i = 0; i < 4; i++) {
+    int index = neighbors[i];
+    // if there is no neighboring index in that directions
+    if (index == -1) continue;
+
+    // otherwise see if a stone exists there
+    for (int j = 0; j < stones->next_index; j++) {
+      found_stone = &stones->stones[j];
+      if (found_stone->intersection_index == index) break;
+      found_stone = NULL;
+    }
+
+    // if there is no stone, continue to the next pass;
+    if (found_stone == NULL) continue;
+
+    // otherwise, let's see if it's dead
+    try_kill_stone(found_stone, stones);
+  }
+}
+
 
 void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coords[], Stones *stones, Coordinate **hover) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
       const Coordinate click = { event.button.x, event.button.y};
-      place_stone(coords, click, stones);
+      const Stone *stone = place_stone(coords, click, stones);
+      if (stone != NULL)
+        kill_stones(stone, stones);
     }
     if (event.type == SDL_MOUSEMOTION) {
       const Coordinate hover_event = { event.motion.x, event.motion.y };

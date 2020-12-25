@@ -18,3 +18,5 @@ cd ~/Dev/c-go && make
    - [ ] Groups
    - [ ] ko
    - [ ] Self Atari + eyes
+* Improvements
+** TODO Make the Stones Array place stone by index. So stones->stones[19] attempts to find the stone at index 19;

@@ -2,6 +2,7 @@
 #define STRUCTS_H
 
 #include <stdbool.h>
+#include "consts.h"
 
 typedef struct {
   int x;
@@ -19,10 +20,10 @@ typedef struct {
   int liberties;
 } Stone;
 
-Stone create_stone(Coordinate coord, Color color, int intersection_index);
+const Stone *create_stone(Coordinate coord, Color color, int intersection_index);
 
 typedef struct {
-  Stone stones[1000];
+  Stone stones[NUM_INTERSECTIONS];
   int next_index;
   Color turn;
 } Stones;

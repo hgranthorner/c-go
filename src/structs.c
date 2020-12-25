@@ -2,8 +2,9 @@
 
 int stone_id = 0;
 
-Stone create_stone(Coordinate coord, Color color, int intersection_index) {
+const Stone *create_stone(const Coordinate coord, const Color color, const int intersection_index) {
   Stone stone = {stone_id, coord, color, intersection_index, false, 4};
+  const Stone *stone_p = &stone;
   stone_id++;
-  return stone;
+  return stone_p;
 }
