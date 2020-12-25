@@ -16,7 +16,6 @@ typedef struct {
   Coordinate coord;
   Color color;
   int intersection_index;
-  bool destroyed;
   int liberties;
 } Stone;
 
