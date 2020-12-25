@@ -7,49 +7,6 @@
 #include "structs.h"
 #include "render.h"
 
-int init_SDL(SDL_Window **window,
-             SDL_Renderer **renderer,
-             TTF_Font **font) {
-  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-    printf("Failed to init SDL.\n");
-    return -1;
-  }
-
-  if (TTF_Init() == -1) {
-    printf("Failed to init ttf.\n");
-    return -1;
-  }
-
-  *window = SDL_CreateWindow("SDL Tutorial",
-                             SDL_WINDOWPOS_CENTERED,
-                             SDL_WINDOWPOS_CENTERED,
-                             SCREEN_WIDTH,
-                             SCREEN_HEIGHT,
-                             SDL_WINDOW_OPENGL);
-  if(*window == NULL) {
-    printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
-    return -1;
-  }
-
-  *renderer = SDL_CreateRenderer(*window, -1,
-                                 SDL_RENDERER_ACCELERATED
-                                 | SDL_RENDERER_PRESENTVSYNC);
-
-  if (*renderer == NULL) {
-    printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
-    return -1;
-  }
-
-  *font = TTF_OpenFont("assets/arial.ttf", FONT_SIZE);
-  if (*font == NULL) {
-    printf( "Font could not be loaded! SDL_Error: %s\n", SDL_GetError());
-    return -1;
-  }
-
-
-  return 0;
-}
-
 void generate_coordinates(Coordinate coords[]) {
   for (int i = 0; i < BOARD_DIMENSIONS; i++) {
     const int x = SQUARE_LENGTH * i + PADDING;
@@ -94,20 +51,15 @@ const Stone *place_stone(Coordinate coords[], const Coordinate click, Stones *st
   Coordinate clicked = coords[index];
 
   // TODO: Create or add a "contains" function
-  bool found = false;
-
-  for (int i = 0; i < stones->next_index; i++) {
-    found = stones->stones[i].intersection_index == index;
-  }
+  bool empty = is_empty(&stones->stones[index]);
 
   const Stone *stone = NULL;
 
-  if (!found) {
+  if (empty) {
     stone = create_stone(clicked, stones->turn, index);
-    stones->stones[stones->next_index] = *stone;
+    stones->stones[index] = *stone;
     if (stones->turn == Black) stones->turn = White;
     else if (stones->turn == White) stones->turn = Black;
-    stones->next_index++;
   }
 
   return stone;
@@ -138,11 +90,11 @@ void kill_stones(const Stone *stone, Stones *stones) {
     if (index == -1) continue;
 
     // otherwise see if a stone exists there
-    for (int j = 0; j < stones->next_index; j++) {
-      found_stone = &stones->stones[j];
-      if (found_stone->intersection_index == index) break;
-      found_stone = NULL;
-    }
+    /* for (int j = 0; j < stones->next_index; j++) { */
+    /*   found_stone = &stones->stones[j]; */
+    /*   if (found_stone->intersection_index == index) break; */
+    /*   found_stone = NULL; */
+    /* } */
 
     // if there is no stone, continue to the next pass;
     if (found_stone == NULL) continue;
@@ -185,8 +137,11 @@ int main(void) {
 
   Coordinate coordinates[NUM_INTERSECTIONS];
   generate_coordinates(coordinates);
-
-  Stones stones = { {}, 0, Black };
+  Stone stone_arr[NUM_INTERSECTIONS];
+  for (int i = 0; i < NUM_INTERSECTIONS; i++)
+    stone_arr[i] = NO_STONE;
+  Stones stones = { .stones = {}, .turn = Black };
+  memcpy(stones.stones, stone_arr, sizeof(stone_arr));
   Coordinate *hovered_coordinate = NULL;
   Score score = { 0, 0, 0, 0 };
 

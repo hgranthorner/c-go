@@ -4,6 +4,48 @@
 #include "consts.h"
 #include "structs.h"
 
+int init_SDL(SDL_Window **window, SDL_Renderer **renderer, TTF_Font **font) {
+  if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+    printf("Failed to init SDL.\n");
+    return -1;
+  }
+
+  if (TTF_Init() == -1) {
+    printf("Failed to init ttf.\n");
+    return -1;
+  }
+
+  *window = SDL_CreateWindow("SDL Tutorial",
+                             SDL_WINDOWPOS_CENTERED,
+                             SDL_WINDOWPOS_CENTERED,
+                             SCREEN_WIDTH,
+                             SCREEN_HEIGHT,
+                             SDL_WINDOW_OPENGL);
+  if(*window == NULL) {
+    printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+    return -1;
+  }
+
+  *renderer = SDL_CreateRenderer(*window, -1,
+                                 SDL_RENDERER_ACCELERATED
+                                 | SDL_RENDERER_PRESENTVSYNC);
+
+  if (*renderer == NULL) {
+    printf( "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+    return -1;
+  }
+
+  *font = TTF_OpenFont("assets/arial.ttf", FONT_SIZE);
+  if (*font == NULL) {
+    printf( "Font could not be loaded! SDL_Error: %s\n", SDL_GetError());
+    return -1;
+  }
+
+
+  return 0;
+}
+
+
 void draw_black_stone(SDL_Renderer *renderer, int x, int y) {
   filledCircleRGBA(renderer, x, y, STONE_RADIUS, 0, 0, 0, 255);
 }
@@ -61,10 +103,12 @@ void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, co
   }
 
   if (stones != NULL) {
-    for (int i = 0; i < stones->next_index; i++) {
+    for (int i = 0; i < NUM_INTERSECTIONS; i++) {
       const Stone stone = stones->stones[i];
-      if (stone.color == Black) draw_black_stone(renderer, stone.coord.x, stone.coord.y);
-      if (stone.color == White) draw_white_stone(renderer, stone.coord.x, stone.coord.y);
+      if (!is_empty(&stone)) {
+        if (stone.color == Black) draw_black_stone(renderer, stone.coord.x, stone.coord.y);
+        if (stone.color == White) draw_white_stone(renderer, stone.coord.x, stone.coord.y);
+      }
     }
   }
 }

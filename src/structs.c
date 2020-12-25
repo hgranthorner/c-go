@@ -8,3 +8,7 @@ const Stone *create_stone(const Coordinate coord, const Color color, const int i
   stone_id++;
   return stone_p;
 }
+
+bool is_empty(const Stone *stone) {
+  return stone->id == -1;
+}
