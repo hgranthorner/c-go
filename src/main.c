@@ -74,8 +74,9 @@ void get_neighboring_indices(const int index, int *arr) {
 
 
 // Idea: get the neighboring indices of our stone.
+// TODO: Implement this. Maybe recursive? All we need is one liberty on the group to not be dead.
 void try_kill_stone(const Stone *stone, const Stones *stones) {
-
+  printf("Stone id: %d\n", stone->id);
 }
 
 void kill_stones(const Stone *stone, Stones *stones) {
@@ -90,14 +91,10 @@ void kill_stones(const Stone *stone, Stones *stones) {
     if (index == -1) continue;
 
     // otherwise see if a stone exists there
-    /* for (int j = 0; j < stones->next_index; j++) { */
-    /*   found_stone = &stones->stones[j]; */
-    /*   if (found_stone->intersection_index == index) break; */
-    /*   found_stone = NULL; */
-    /* } */
+    found_stone = &stones->stones[index];
 
     // if there is no stone, continue to the next pass;
-    if (found_stone == NULL) continue;
+    if (is_empty(found_stone)) continue;
 
     // otherwise, let's see if it's dead
     try_kill_stone(found_stone, stones);
