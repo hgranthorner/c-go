@@ -14,10 +14,10 @@ bool is_empty(const Stone *stone) {
   return stone->id == -1;
 }
 
-void create_stones(Stones *stones, Color turn) {
+void create_game(Game *game, Color turn) {
   Stone stone_arr[NUM_INTERSECTIONS];
   for (int i = 0; i < NUM_INTERSECTIONS; i++) stone_arr[i] = NO_STONE;
 
-  memcpy(stones->stones, stone_arr, sizeof(stone_arr));
-  stones->turn = turn;
+  memcpy(game->stones, stone_arr, sizeof(stone_arr));
+  game->turn = turn;
 }

@@ -54,7 +54,7 @@ void draw_white_stone(SDL_Renderer *renderer, int x, int y) {
   filledCircleRGBA(renderer, x, y, STONE_RADIUS, 255, 255, 255, 255);
 }
 
-void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, const Coordinate *hover, const Score *score) {
+void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Game *game, const Coordinate *hover, const Score *score) {
   SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255);
   SDL_RenderClear(renderer);
 
@@ -102,9 +102,9 @@ void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, co
     SDL_RenderFillRect(renderer, &rect);
   }
 
-  if (stones != NULL) {
+  if (game != NULL) {
     for (int i = 0; i < NUM_INTERSECTIONS; i++) {
-      const Stone stone = stones->stones[i];
+      const Stone stone = game->stones[i];
       if (!is_empty(&stone)) {
         if (stone.color == Black) draw_black_stone(renderer, stone.coord.x, stone.coord.y);
         if (stone.color == White) draw_white_stone(renderer, stone.coord.x, stone.coord.y);

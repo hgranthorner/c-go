@@ -27,9 +27,9 @@ const Stone *create_stone(Coordinate coord, Color color, int intersection_index)
 typedef struct {
   Stone stones[NUM_INTERSECTIONS];
   Color turn;
-} Stones;
+} Game;
 
-void create_stones(Stones *stones, Color turn);
+void create_game(Game *game, Color turn);
 
 typedef struct {
   int black_territory;

@@ -41,7 +41,7 @@ Coordinate *find_intersection(Coordinate coords[], const Coordinate *event) {
   return &coords[index];
 }
 
-const Stone *place_stone(Coordinate coords[], const Coordinate click, Stones *stones) {
+const Stone *place_stone(Coordinate coords[], const Coordinate click, Game *game) {
   const int index = find_index(&click);
 
   if (index == -1) {
@@ -51,13 +51,13 @@ const Stone *place_stone(Coordinate coords[], const Coordinate click, Stones *st
   Coordinate clicked = coords[index];
 
   // TODO: Create or add a "contains" function
-  bool empty = is_empty(&stones->stones[index]);
+  bool empty = is_empty(&game->stones[index]);
 
   if (empty) {
-    stones->stones[index] = *create_stone(clicked, stones->turn, index);
-    if (stones->turn == Black) stones->turn = White;
-    else if (stones->turn == White) stones->turn = Black;
-    return &stones->stones[index];
+    game->stones[index] = *create_stone(clicked, game->turn, index);
+    if (game->turn == Black) game->turn = White;
+    else if (game->turn == White) game->turn = Black;
+    return &game->stones[index];
   }
 
   return NULL;
@@ -70,29 +70,29 @@ void get_neighboring_indices(const int index, int *arr) {
   arr[3] = index - BOARD_DIMENSIONS < 0                  ? -1 : index - BOARD_DIMENSIONS;
 }
 
-void populate_group(const Stone *stone, const Stones *stones, bool group[]) {
+void populate_group(const Stone *stone, const Game *game, bool group[]) {
   int neighbors[4];
   get_neighboring_indices(stone->intersection_index, neighbors);
   for (int i = 0; i < 4; i++) {
     const int index = neighbors[i];
     // Our conditions: the index must be on the board; we must have not checked that stone already, and that stone must be on the same team as the on we're currently checking
-    const Stone *stone_to_check = &stones->stones[index];
+    const Stone *stone_to_check = &game->stones[index];
     if (index != -1 &&
         !is_empty(stone_to_check) &&
         !group[index] &&
         stone_to_check->color == stone->color) {
       group[index] = true;
-      populate_group(stone_to_check, stones, group);
+      populate_group(stone_to_check, game, group);
     }
   }
 }
 
-int try_kill_stone(const Stone *stone, Stones *stones) {
+int try_kill_stone(const Stone *stone, Game *game) {
   // first find the group of stones
   bool group[NUM_INTERSECTIONS];
   for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
   group[stone->intersection_index] = true;
-  populate_group(stone, stones, group);
+  populate_group(stone, game, group);
 
   // then check if any of the stones have any liberties
   int neighbors[4];
@@ -102,7 +102,7 @@ int try_kill_stone(const Stone *stone, Stones *stones) {
       get_neighboring_indices(target_stone_index, neighbors);
       for (int neighbor_index = 0; neighbor_index < 4; neighbor_index++) {
         int neighbor = neighbors[neighbor_index];
-        if (neighbor != -1 && is_empty(&stones->stones[neighbor])) {
+        if (neighbor != -1 && is_empty(&game->stones[neighbor])) {
           printf("Neighbor index %d\n", neighbor);
           alive = true;
           break;
@@ -116,7 +116,7 @@ int try_kill_stone(const Stone *stone, Stones *stones) {
   if (!alive) {
     for (int i = 0; i < NUM_INTERSECTIONS; i++) {
       if (group[i]) {
-        stones->stones[i] = NO_STONE;
+        game->stones[i] = NO_STONE;
         points_awarded++;
       }
     }
@@ -125,7 +125,7 @@ int try_kill_stone(const Stone *stone, Stones *stones) {
   return points_awarded;
 }
 
-int kill_stones(const Stone *stone, Stones *stones) {
+int kill_stones(const Stone *stone, Game *game) {
   int neighbors[4];
   get_neighboring_indices(stone->intersection_index, neighbors);
   Stone *found_stone = NULL;
@@ -138,30 +138,30 @@ int kill_stones(const Stone *stone, Stones *stones) {
     // if there is no neighboring index in that direction, then that index is off the board
     if (index == -1) continue;
 
-    found_stone = &stones->stones[index];
+    found_stone = &game->stones[index];
 
     // if there is no stone, or the stone is friendly, continue to the next pass
     if (is_empty(found_stone) || found_stone->color == stone->color) continue;
 
     // otherwise, let's see if it's dead
-    points_awarded = try_kill_stone(found_stone, stones);
+    points_awarded = try_kill_stone(found_stone, game);
   }
 
   return points_awarded;
 }
 
 
-void handle_inputs(bool *running, Coordinate coords[], Stones *stones, Score *score, Coordinate **hover) {
+void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score, Coordinate **hover) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
       const Coordinate click = { event.button.x, event.button.y};
-      const Stone *stone = place_stone(coords, click, stones);
+      const Stone *stone = place_stone(coords, click, game);
       int points_awarded = 0;
       // Place stone alternates the current turn
-      if (stone != NULL) points_awarded = kill_stones(stone, stones);
-      if (stones->turn == White) score->black_takes += points_awarded;
-      if (stones->turn == Black) score->white_takes += points_awarded;
+      if (stone != NULL) points_awarded = kill_stones(stone, game);
+      if (game->turn == White) score->black_takes += points_awarded;
+      if (game->turn == Black) score->white_takes += points_awarded;
     }
     if (event.type == SDL_MOUSEMOTION) {
       const Coordinate hover_event = { event.motion.x, event.motion.y };
@@ -187,8 +187,8 @@ int main(void) {
   Coordinate coordinates[NUM_INTERSECTIONS];
   generate_coordinates(coordinates);
 
-  Stones stones;
-  create_stones(&stones, Black);
+  Game game;
+  create_game(&game, Black);
 
   Coordinate *hovered_coordinate = NULL;
   Score score = { 0, 0, 0, 0 };
@@ -204,9 +204,9 @@ int main(void) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
 
-    handle_inputs(&running, coordinates, &stones, &score, &hovered_coordinate);
+    handle_inputs(&running, coordinates, &game, &score, &hovered_coordinate);
 
-    draw_board(renderer, font, &stones, hovered_coordinate, &score);
+    draw_board(renderer, font, &game, hovered_coordinate, &score);
 
     const int end_frame_time = SDL_GetTicks();
     const int delta_time = end_frame_time - start_frame_time;
