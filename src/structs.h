@@ -17,9 +17,10 @@ typedef struct {
   Color color;
   int intersection_index;
   int liberties;
+  int turn;
 } Stone;
 
-static Stone NO_STONE = {-1, {-1, -1}, Black, -1, -1};
+static Stone NO_STONE = { -1, {-1, -1}, Black, -1, -1, -1 };
 bool is_empty(const Stone *stone);
 
 const Stone *create_stone(Coordinate coord, Color color, int intersection_index);

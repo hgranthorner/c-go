@@ -49,8 +49,6 @@ const Stone *place_stone(Coordinate coords[], const Coordinate click, Game *game
   }
 
   Coordinate clicked = coords[index];
-
-  // TODO: Create or add a "contains" function
   bool empty = is_empty(&game->stones[index]);
 
   if (empty) {
@@ -98,29 +96,30 @@ int try_kill_stone(const Stone *stone, Game *game) {
   int neighbors[4];
   bool alive = false;
   for (int target_stone_index = 0; target_stone_index < NUM_INTERSECTIONS; target_stone_index++) {
-    if (group[target_stone_index]) {
-      get_neighboring_indices(target_stone_index, neighbors);
-      for (int neighbor_index = 0; neighbor_index < 4; neighbor_index++) {
-        int neighbor = neighbors[neighbor_index];
-        if (neighbor != -1 && is_empty(&game->stones[neighbor])) {
-          printf("Neighbor index %d\n", neighbor);
-          alive = true;
-          break;
-        }
+
+    // If the target_stone_index is not part of the group, then just go to the next index
+    if (!group[target_stone_index]) continue;
+    get_neighboring_indices(target_stone_index, neighbors);
+    for (int neighbor_index = 0; neighbor_index < 4; neighbor_index++) {
+      int neighbor = neighbors[neighbor_index];
+      if (neighbor != -1 && is_empty(&game->stones[neighbor])) {
+        alive = true;
+        break;
       }
     }
   }
 
   int points_awarded = 0;
 
-  if (!alive) {
-    for (int i = 0; i < NUM_INTERSECTIONS; i++) {
-      if (group[i]) {
-        game->stones[i] = NO_STONE;
-        points_awarded++;
-      }
-    }
+  // If the group is still alive, nothing dies
+  if (alive) return points_awarded;
+
+  for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+    if (!group[i]) continue;
+    game->stones[i] = NO_STONE;
+    points_awarded++;
   }
+
 
   return points_awarded;
 }
@@ -158,7 +157,7 @@ void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score,
       const Coordinate click = { event.button.x, event.button.y};
       const Stone *stone = place_stone(coords, click, game);
       int points_awarded = 0;
-      // Place stone alternates the current turn
+      // place_stone alternates the current turn
       if (stone != NULL) points_awarded = kill_stones(stone, game);
       if (game->turn == White) score->black_takes += points_awarded;
       if (game->turn == Black) score->white_takes += points_awarded;
