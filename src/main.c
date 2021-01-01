@@ -81,28 +81,56 @@ void populate_group(const Stone *stone, const Stones *stones, bool group[]) {
         !is_empty(stone_to_check) &&
         !group[index] &&
         stone_to_check->color == stone->color) {
-      printf("Adding index %d\n", index);
       group[index] = true;
       populate_group(stone_to_check, stones, group);
     }
   }
 }
 
-void try_kill_stone(const Stone *stone, const Stones *stones) {
+int try_kill_stone(const Stone *stone, Stones *stones) {
   // first find the group of stones
   bool group[NUM_INTERSECTIONS];
   for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
   group[stone->intersection_index] = true;
-  printf("-----\n");
   populate_group(stone, stones, group);
 
-  // TODO then check if any of the stones have any liberties
+  // then check if any of the stones have any liberties
+  int neighbors[4];
+  bool alive = false;
+  for (int target_stone_index = 0; target_stone_index < NUM_INTERSECTIONS; target_stone_index++) {
+    if (group[target_stone_index]) {
+      get_neighboring_indices(target_stone_index, neighbors);
+      for (int neighbor_index = 0; neighbor_index < 4; neighbor_index++) {
+        int neighbor = neighbors[neighbor_index];
+        if (neighbor != -1 && is_empty(&stones->stones[neighbor])) {
+          printf("Neighbor index %d\n", neighbor);
+          alive = true;
+          break;
+        }
+      }
+    }
+  }
+
+  int points_awarded = 0;
+
+  if (!alive) {
+    for (int i = 0; i < NUM_INTERSECTIONS; i++) {
+      if (group[i]) {
+        stones->stones[i] = NO_STONE;
+        points_awarded++;
+      }
+    }
+  }
+
+  return points_awarded;
 }
 
-void kill_stones(const Stone *stone, Stones *stones) {
+int kill_stones(const Stone *stone, Stones *stones) {
   int neighbors[4];
   get_neighboring_indices(stone->intersection_index, neighbors);
   Stone *found_stone = NULL;
+
+  int points_awarded = 0;
 
   // n is a 4 element array
   for (int i = 0; i < 4; i++) {
@@ -116,18 +144,24 @@ void kill_stones(const Stone *stone, Stones *stones) {
     if (is_empty(found_stone) || found_stone->color == stone->color) continue;
 
     // otherwise, let's see if it's dead
-    try_kill_stone(found_stone, stones);
+    points_awarded = try_kill_stone(found_stone, stones);
   }
+
+  return points_awarded;
 }
 
 
-void handle_inputs(bool *running, Coordinate coords[], Stones *stones, Coordinate **hover) {
+void handle_inputs(bool *running, Coordinate coords[], Stones *stones, Score *score, Coordinate **hover) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
       const Coordinate click = { event.button.x, event.button.y};
       const Stone *stone = place_stone(coords, click, stones);
-      if (stone != NULL) kill_stones(stone, stones);
+      int points_awarded = 0;
+      // Place stone alternates the current turn
+      if (stone != NULL) points_awarded = kill_stones(stone, stones);
+      if (stones->turn == White) score->black_takes += points_awarded;
+      if (stones->turn == Black) score->white_takes += points_awarded;
     }
     if (event.type == SDL_MOUSEMOTION) {
       const Coordinate hover_event = { event.motion.x, event.motion.y };
@@ -170,7 +204,7 @@ int main(void) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
 
-    handle_inputs(&running, coordinates, &stones, &hovered_coordinate);
+    handle_inputs(&running, coordinates, &stones, &score, &hovered_coordinate);
 
     draw_board(renderer, font, &stones, hovered_coordinate, &score);
 
