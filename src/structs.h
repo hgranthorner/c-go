@@ -29,6 +29,8 @@ typedef struct {
   Color turn;
 } Stones;
 
+void create_stones(Stones *stones, Color turn);
+
 typedef struct {
   int black_territory;
   int black_takes;

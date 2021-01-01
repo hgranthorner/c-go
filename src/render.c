@@ -62,8 +62,8 @@ void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Stones *stones, co
   char white_takes[12];
   sprintf(black_takes, "%d", score->black_takes);
   sprintf(white_takes, "%d", score->white_takes);
-  const SDL_Color black_color = {0, 0, 0};
-  const SDL_Color white_color = {255, 255, 255};
+  const SDL_Color black_color = {0, 0, 0, 255};
+  const SDL_Color white_color = {255, 255, 255, 255};
   SDL_Surface *surface = TTF_RenderText_Blended(font, black_takes, black_color);
   SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
   int text_w = 0;

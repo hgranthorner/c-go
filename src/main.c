@@ -53,16 +53,14 @@ const Stone *place_stone(Coordinate coords[], const Coordinate click, Stones *st
   // TODO: Create or add a "contains" function
   bool empty = is_empty(&stones->stones[index]);
 
-  const Stone *stone = NULL;
-
   if (empty) {
-    stone = create_stone(clicked, stones->turn, index);
-    stones->stones[index] = *stone;
+    stones->stones[index] = *create_stone(clicked, stones->turn, index);
     if (stones->turn == Black) stones->turn = White;
     else if (stones->turn == White) stones->turn = Black;
+    return &stones->stones[index];
   }
 
-  return stone;
+  return NULL;
 }
 
 void get_neighboring_indices(const int index, int *arr) {
@@ -72,11 +70,33 @@ void get_neighboring_indices(const int index, int *arr) {
   arr[3] = index - BOARD_DIMENSIONS < 0                  ? -1 : index - BOARD_DIMENSIONS;
 }
 
+void populate_group(const Stone *stone, const Stones *stones, bool group[]) {
+  int neighbors[4];
+  get_neighboring_indices(stone->intersection_index, neighbors);
+  for (int i = 0; i < 4; i++) {
+    const int index = neighbors[i];
+    // Our conditions: the index must be on the board; we must have not checked that stone already, and that stone must be on the same team as the on we're currently checking
+    const Stone *stone_to_check = &stones->stones[index];
+    if (index != -1 &&
+        !is_empty(stone_to_check) &&
+        !group[index] &&
+        stone_to_check->color == stone->color) {
+      printf("Adding index %d\n", index);
+      group[index] = true;
+      populate_group(stone_to_check, stones, group);
+    }
+  }
+}
 
-// Idea: get the neighboring indices of our stone.
-// TODO: Implement this. Maybe recursive? All we need is one liberty on the group to not be dead.
 void try_kill_stone(const Stone *stone, const Stones *stones) {
-  printf("Stone id: %d\n", stone->id);
+  // first find the group of stones
+  bool group[NUM_INTERSECTIONS];
+  for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
+  group[stone->intersection_index] = true;
+  printf("-----\n");
+  populate_group(stone, stones, group);
+
+  // TODO then check if any of the stones have any liberties
 }
 
 void kill_stones(const Stone *stone, Stones *stones) {
@@ -87,14 +107,13 @@ void kill_stones(const Stone *stone, Stones *stones) {
   // n is a 4 element array
   for (int i = 0; i < 4; i++) {
     int index = neighbors[i];
-    // if there is no neighboring index in that directions
+    // if there is no neighboring index in that direction, then that index is off the board
     if (index == -1) continue;
 
-    // otherwise see if a stone exists there
     found_stone = &stones->stones[index];
 
-    // if there is no stone, continue to the next pass;
-    if (is_empty(found_stone)) continue;
+    // if there is no stone, or the stone is friendly, continue to the next pass
+    if (is_empty(found_stone) || found_stone->color == stone->color) continue;
 
     // otherwise, let's see if it's dead
     try_kill_stone(found_stone, stones);
@@ -102,14 +121,13 @@ void kill_stones(const Stone *stone, Stones *stones) {
 }
 
 
-void handle_inputs(bool *running, SDL_Renderer *renderer, Coordinate coords[], Stones *stones, Coordinate **hover) {
+void handle_inputs(bool *running, Coordinate coords[], Stones *stones, Coordinate **hover) {
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
       const Coordinate click = { event.button.x, event.button.y};
       const Stone *stone = place_stone(coords, click, stones);
-      if (stone != NULL)
-        kill_stones(stone, stones);
+      if (stone != NULL) kill_stones(stone, stones);
     }
     if (event.type == SDL_MOUSEMOTION) {
       const Coordinate hover_event = { event.motion.x, event.motion.y };
@@ -134,11 +152,10 @@ int main(void) {
 
   Coordinate coordinates[NUM_INTERSECTIONS];
   generate_coordinates(coordinates);
-  Stone stone_arr[NUM_INTERSECTIONS];
-  for (int i = 0; i < NUM_INTERSECTIONS; i++)
-    stone_arr[i] = NO_STONE;
-  Stones stones = { .stones = {}, .turn = Black };
-  memcpy(stones.stones, stone_arr, sizeof(stone_arr));
+
+  Stones stones;
+  create_stones(&stones, Black);
+
   Coordinate *hovered_coordinate = NULL;
   Score score = { 0, 0, 0, 0 };
 
@@ -153,7 +170,7 @@ int main(void) {
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
     }
 
-    handle_inputs(&running, renderer, coordinates, &stones, &hovered_coordinate);
+    handle_inputs(&running, coordinates, &stones, &hovered_coordinate);
 
     draw_board(renderer, font, &stones, hovered_coordinate, &score);
 
