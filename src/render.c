@@ -97,7 +97,8 @@ void draw_board(SDL_Renderer *renderer, TTF_Font *font, const Game *game, const 
   }
 
   if (hover != NULL) {
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    int color = game->turn == White ? 255 : 0;
+    SDL_SetRenderDrawColor(renderer, color, color, color, 255);
     const SDL_Rect rect = { hover->x - 3, hover->y - 3, 6, 6 };
     SDL_RenderFillRect(renderer, &rect);
   }

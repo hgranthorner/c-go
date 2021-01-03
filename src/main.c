@@ -143,7 +143,7 @@ int kill_stones(const Stone *stone, Game *game) {
     if (is_empty(found_stone) || found_stone->color == stone->color) continue;
 
     // otherwise, let's see if it's dead
-    points_awarded = try_kill_stone(found_stone, game);
+    points_awarded += try_kill_stone(found_stone, game);
   }
 
   return points_awarded;
@@ -154,7 +154,7 @@ void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score,
   SDL_Event event;
   if (SDL_PollEvent(&event)) {
     if (event.type == SDL_MOUSEBUTTONUP) {
-      const Coordinate click = { event.button.x, event.button.y};
+      const Coordinate click = { event.button.x, event.button.y };
       const Stone *stone = place_stone(coords, click, game);
       int points_awarded = 0;
       // place_stone alternates the current turn
@@ -195,13 +195,11 @@ int main(void) {
   while (running) {
     const int start_frame_time = SDL_GetTicks();
 
-    if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0) {
+    if (SDL_SetRenderDrawColor(renderer, 166, 104, 41, 255) < 0)
       printf("Failed to draw the color. SDL Error: %s\n", SDL_GetError());
-    }
 
-    if (SDL_RenderClear(renderer) < 0) {
+    if (SDL_RenderClear(renderer) < 0)
       printf("Failed to clear the render. SDL Error: %s\n", SDL_GetError());
-    }
 
     handle_inputs(&running, coordinates, &game, &score, &hovered_coordinate);
 
