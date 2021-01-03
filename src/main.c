@@ -53,8 +53,6 @@ const Stone *place_stone(Coordinate coords[], const Coordinate click, Game *game
 
   if (empty) {
     game->stones[index] = *create_stone(clicked, game->turn, index);
-    if (game->turn == Black) game->turn = White;
-    else if (game->turn == White) game->turn = Black;
     return &game->stones[index];
   }
 
@@ -85,7 +83,7 @@ void populate_group(const Stone *stone, const Game *game, bool group[]) {
   }
 }
 
-int try_kill_stone(const Stone *stone, Game *game) {
+int try_kill_stones(const Stone *stone, Game *game) {
   // first find the group of stones
   bool group[NUM_INTERSECTIONS];
   for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
@@ -96,7 +94,6 @@ int try_kill_stone(const Stone *stone, Game *game) {
   int neighbors[4];
   bool alive = false;
   for (int target_stone_index = 0; target_stone_index < NUM_INTERSECTIONS; target_stone_index++) {
-
     // If the target_stone_index is not part of the group, then just go to the next index
     if (!group[target_stone_index]) continue;
     get_neighboring_indices(target_stone_index, neighbors);
@@ -143,12 +140,42 @@ int kill_stones(const Stone *stone, Game *game) {
     if (is_empty(found_stone) || found_stone->color == stone->color) continue;
 
     // otherwise, let's see if it's dead
-    points_awarded += try_kill_stone(found_stone, game);
+    points_awarded += try_kill_stones(found_stone, game);
   }
 
   return points_awarded;
 }
 
+// TODO: Refactor this and try_kill_stone to have less code reuse
+bool validate_last_played_stone(Game *game) {
+    // first find the group of stones
+  bool group[NUM_INTERSECTIONS];
+  for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
+  group[game->last_played->intersection_index] = true;
+  populate_group(game->last_played, game, group);
+
+  // then check if any of the stones have any liberties
+  int neighbors[4];
+  bool alive = false;
+  for (int target_stone_index = 0; target_stone_index < NUM_INTERSECTIONS; target_stone_index++) {
+    // If the target_stone_index is not part of the group, then just go to the next index
+    if (!group[target_stone_index]) continue;
+    get_neighboring_indices(target_stone_index, neighbors);
+    for (int neighbor_index = 0; neighbor_index < 4; neighbor_index++) {
+      int neighbor = neighbors[neighbor_index];
+      if (neighbor != -1 && is_empty(&game->stones[neighbor])) {
+        alive = true;
+        break;
+      }
+    }
+  }
+
+  if (alive) return true;
+
+  game->stones[game->last_played->intersection_index] = NO_STONE;
+
+  return false;
+}
 
 void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score, Coordinate **hover) {
   SDL_Event event;
@@ -156,11 +183,21 @@ void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score,
     if (event.type == SDL_MOUSEBUTTONUP) {
       const Coordinate click = { event.button.x, event.button.y };
       const Stone *stone = place_stone(coords, click, game);
-      int points_awarded = 0;
-      // place_stone alternates the current turn
-      if (stone != NULL) points_awarded = kill_stones(stone, game);
-      if (game->turn == White) score->black_takes += points_awarded;
-      if (game->turn == Black) score->white_takes += points_awarded;
+      if (stone == NULL) return;
+
+      game->last_played = stone;
+
+      int points_awarded = kill_stones(stone, game);
+
+      bool valid_move = true;
+      if (points_awarded == 0) valid_move = validate_last_played_stone(game);
+      if (game->turn == Black) score->black_takes += points_awarded;
+      if (game->turn == White) score->white_takes += points_awarded;
+
+      if (valid_move) {
+        if (game->turn == Black) game->turn = White;
+        else if (game->turn == White) game->turn = Black;
+      }
     }
     if (event.type == SDL_MOUSEMOTION) {
       const Coordinate hover_event = { event.motion.x, event.motion.y };

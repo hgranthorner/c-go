@@ -22,4 +22,5 @@ void create_game(Game *game, Color player_turn) {
 
   memcpy(game->stones, stone_arr, sizeof(stone_arr));
   game->turn = player_turn;
+  game->last_played = NULL;
 }

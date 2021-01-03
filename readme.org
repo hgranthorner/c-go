@@ -17,8 +17,8 @@ cd ~/Dev/c-go && make
 - [X] Kill singular stone
 - [X] Keep track of score
 - [X] Kill groups of stones
-** TODO Add rules
-   - [ ] Cannot play self atari
-   - [ ] Ko
+** IN PROGRESS Add rules
+   - [X] Cannot play self atari
+   - [ ] Ko - cannot replay moves immediately
 * Improvements
 ** DONE Make the Stones Array place stone by index. So stones->stones[19] attempts to find the stone at index 19;
