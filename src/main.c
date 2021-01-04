@@ -148,11 +148,13 @@ int kill_stones(const Stone *stone, Game *game) {
 
 // TODO: Refactor this and try_kill_stone to have less code reuse
 bool validate_last_played_stone(Game *game) {
-    // first find the group of stones
+  // first find the group of stones
   bool group[NUM_INTERSECTIONS];
   for (int i = 0; i < NUM_INTERSECTIONS; i++) group[i] = false;
-  group[game->last_played->intersection_index] = true;
-  populate_group(game->last_played, game, group);
+  const Stone *last_played = &game->history[game->len_history];
+  int last_index = last_played->intersection_index;
+  group[last_index] = true;
+  populate_group(last_played, game, group);
 
   // then check if any of the stones have any liberties
   int neighbors[4];
@@ -171,8 +173,7 @@ bool validate_last_played_stone(Game *game) {
   }
 
   if (alive) return true;
-
-  game->stones[game->last_played->intersection_index] = NO_STONE;
+  game->stones[last_index] = NO_STONE;
 
   return false;
 }
@@ -185,16 +186,18 @@ void handle_inputs(bool *running, Coordinate coords[], Game *game, Score *score,
       const Stone *stone = place_stone(coords, click, game);
       if (stone == NULL) return;
 
-      game->last_played = stone;
+      game->history[game->len_history] = *stone;
 
       int points_awarded = kill_stones(stone, game);
 
       bool valid_move = true;
+
       if (points_awarded == 0) valid_move = validate_last_played_stone(game);
       if (game->turn == Black) score->black_takes += points_awarded;
       if (game->turn == White) score->white_takes += points_awarded;
 
       if (valid_move) {
+        game->len_history++;
         if (game->turn == Black) game->turn = White;
         else if (game->turn == White) game->turn = Black;
       }
